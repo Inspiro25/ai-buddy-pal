@@ -18,42 +18,16 @@ import { toast } from 'sonner';
 import { ImageInput } from './ImageInput';
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-// Add imports at the top
+// Remove the scroll-utils import
 import { Paperclip, Smartphone, Monitor } from "lucide-react";
 
 export function ChatInterface() {
-  // Add refs and handlers before the return statement
+  const isMobile = useIsMobile();
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
-      return;
-    }
-
-    const validTypes = [
-      'application/pdf',
-      'text/plain',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
-
-    if (!validTypes.includes(file.type)) {
-      toast.error('Unsupported file type');
-      return;
-    }
-
-    try {
-      const documentMessage = `[Document uploaded: ${file.name}]`;
-      sendMessage(documentMessage);
-      toast.success('Document uploaded successfully');
-    } catch (error) {
-      toast.error('Failed to process document');
-    }
-  };
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
     messages,
@@ -74,97 +48,27 @@ export function ChatInterface() {
       }
     ]
   });
-  
+
   const [inputValue, setInputValue] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [showImageInput, setShowImageInput] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
   const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
-  
-  // Enhanced scroll to bottom function with force option
-  const scrollToBottom = (force = false) => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: force ? 'auto' : 'smooth' 
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    setShowScrollButton(distanceFromBottom > 100);
+  };
+
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth'
       });
-    } else if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
     }
   };
-  
-  // Improved auto-scrolling mechanism
-  useEffect(() => {
-    // Immediate scroll for fast response
-    scrollToBottom(true);
-    
-    // Additional forced scroll after all content likely rendered
-    const scrollTimers = [50, 100, 300, 500, 1000].map(delay => 
-      setTimeout(() => scrollToBottom(true), delay)
-    );
-    
-    return () => {
-      scrollTimers.forEach(timer => clearTimeout(timer));
-    };
-  }, [messages, isLoading]);
-  
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-    
-    // Initial scroll when component mounts
-    setTimeout(() => scrollToBottom(true), 100);
-  }, []);
-  
-  useEffect(() => {
-    if (error) {
-      toast.error(error);
-    }
-  }, [error]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-        
-        recognition.onresult = (event: any) => {
-          const transcript = Array.from(event.results)
-            .map((result: any) => result[0])
-            .map((result) => result.transcript)
-            .join('');
-            
-          setInputValue(transcript);
-          
-          if (inputRef.current) {
-            inputRef.current.style.height = 'auto';
-            inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 150)}px`;
-          }
-        };
-        
-        recognition.onerror = (event: any) => {
-          console.error('Speech recognition error', event.error);
-          setIsRecording(false);
-          toast.error(`Speech recognition error: ${event.error}`);
-        };
-        
-        setRecognitionInstance(recognition);
-      }
-    }
-    
-    return () => {
-      if (recognitionInstance) {
-        recognitionInstance.stop();
-      }
-    };
-  }, []);
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
@@ -179,7 +83,7 @@ export function ChatInterface() {
     // Force scroll after sending message
     setTimeout(() => scrollToBottom(true), 100);
   };
-  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
     e.target.style.height = 'auto';
@@ -192,44 +96,56 @@ export function ChatInterface() {
       handleSubmit(e);
     }
   };
-  
-  const toggleRecording = () => {
-    if (!recognitionInstance) {
-      toast.error('Speech recognition is not supported in your browser');
-      return;
-    }
-    
+
+  const toggleRecording = async () => {
     if (!isRecording) {
-      recognitionInstance.start();
-      setIsRecording(true);
-      toast.success('Voice recording started');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recognition = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+        
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        
+        recognition.onresult = (event) => {
+          const transcript = Array.from(event.results)
+            .map(result => result[0])
+            .map(result => result.transcript)
+            .join('');
+          
+          setInputValue(transcript);
+        };
+        
+        recognition.onend = () => {
+          setIsRecording(false);
+          setRecognitionInstance(null);
+        };
+        
+        recognition.start();
+        setIsRecording(true);
+        setRecognitionInstance(recognition);
+      } catch (error) {
+        toast.error('Microphone access denied or not supported');
+        setIsRecording(false);
+      }
     } else {
-      recognitionInstance.stop();
+      if (recognitionInstance) {
+        recognitionInstance.stop();
+      }
       setIsRecording(false);
-      toast.info('Voice recording stopped');
+      setRecognitionInstance(null);
     }
   };
 
-  const handleImageSubmit = (imageUrl: string) => {
-    if (!imageUrl) return;
-    
-    const userMessage = `[Image uploaded]\n${inputValue}`.trim();
-    if (userMessage) {
-      sendMessage(userMessage, imageUrl);
-      setInputValue('');
-      setShowImageInput(false);
-      
-      // Force scroll after submitting image
-      setTimeout(() => scrollToBottom(true), 100);
-    }
-  };
-  
   return (
-    <div className="flex flex-col h-full">
-      <div className={cn(
-        "flex-1 overflow-y-auto scroll-smooth",
-        isMobile && "mt-14 pb-32" // Add top margin for header and bottom padding for input
-      )} ref={scrollContainerRef}>
+    <div className="flex flex-col h-full relative">
+      <div 
+        className={cn(
+          "flex-1 overflow-y-auto scroll-smooth",
+          isMobile && "mt-14 pb-32"
+        )}
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+      >
         <div className="min-h-full">
           {messages.map((message, index) => (
             <ChatMessage 
@@ -268,6 +184,15 @@ export function ChatInterface() {
             />
           )}
           
+          {showScrollButton && (
+            <div 
+              onClick={() => scrollToBottom(true)}
+              className="fixed bottom-28 right-4 p-2 rounded-full bg-purple-600/80 hover:bg-purple-500/80 cursor-pointer transition-all duration-200 shadow-lg backdrop-blur-sm z-50"
+            >
+              <ChevronDown className="h-5 w-5 text-white" />
+            </div>
+          )}
+
           <div ref={messagesEndRef} className="h-20" />
         </div>
       </div>
@@ -392,3 +317,5 @@ function Bot(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+
