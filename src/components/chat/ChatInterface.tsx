@@ -136,6 +136,25 @@ export function ChatInterface() {
     }
   };
 
+  const handleImageSubmit = async (imageData: string) => {
+    try {
+      if (!imageData) {
+        toast.error('Please select an image');
+        return;
+      }
+
+      await sendMessage('', {
+        imageData: imageData
+      });
+      
+      setShowImageInput(false);
+      setTimeout(() => scrollToBottom(), 100);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast.error('Failed to process image');
+    }
+  };
+
   return (
     <div className="flex flex-col h-full relative">
       <div 
