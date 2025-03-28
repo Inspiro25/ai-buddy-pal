@@ -1,0 +1,805 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 260 35% 5%;
+    --foreground: 260 10% 98%;
+
+    --card: 260 30% 8%;
+    --card-foreground: 260 10% 98%;
+
+    --popover: 260 30% 8%;
+    --popover-foreground: 260 10% 98%;
+
+    --primary: 265 75% 60%;
+    --primary-foreground: 260 10% 98%;
+
+    --secondary: 260 25% 12%;
+    --secondary-foreground: 260 10% 98%;
+
+    --muted: 260 25% 12%;
+    --muted-foreground: 260 20% 70%;
+
+    --accent: 280 70% 60%;
+    --accent-foreground: 260 30% 12%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 260 10% 98%;
+
+    --border: 260 25% 15%;
+    --input: 260 25% 15%;
+    --ring: 265 75% 60%;
+
+    --radius: 0.75rem;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@layer base {
+  * {
+    @apply border-border antialiased;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    background: linear-gradient(135deg, hsl(260 35% 5%), hsl(280 35% 9%));
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/10 backdrop-blur-lg border border-white/10 shadow-lg;
+  }
+  
+  .glass-panel-subtle {
+    @apply bg-white/5 backdrop-blur-md border border-white/5;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent animate-gradient-move bg-[length:200%_auto];
+  }
+  
+  .heading-xl {
+    @apply text-4xl md:text-5xl lg:text-7xl font-bold tracking-tight;
+  }
+  
+  .heading-lg {
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight;
+  }
+  
+  .heading-md {
+    @apply text-2xl md:text-3xl font-bold tracking-tight;
+  }
+  
+  .heading-sm {
+    @apply text-xl md:text-2xl font-semibold tracking-tight;
+  }
+  
+  .shimmer {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent;
+  }
+
+  .purple-gradient-card {
+    @apply bg-gradient-to-br from-purple-900/50 to-indigo-900/30 backdrop-blur-sm border border-purple-500/20;
+  }
+
+  .dark-purple-gradient {
+    @apply bg-gradient-to-br from-purple-950 via-purple-900/90 to-indigo-950 border border-purple-700/20 rounded-md sm:rounded-xl;
+  }
+
+  .purple-glow {
+    @apply relative after:absolute after:inset-0 after:-z-10 after:bg-purple-500/20 after:blur-xl after:opacity-75;
+  }
+
+  .mobile-preview-container {
+    @apply relative mx-auto overflow-hidden rounded-xl border-4 border-gray-800 max-w-[320px] shadow-lg;
+  }
+
+  .mobile-preview-frame {
+    @apply rounded-lg;
+  }
+
+  /* App-like mobile styling */
+  .mobile-app-container {
+    @apply fixed inset-0 flex flex-col bg-background;
+  }
+
+  .mobile-app-header {
+    @apply sticky top-0 z-50 bg-purple-950/90 backdrop-blur-lg border-b border-purple-500/30 px-3 py-3;
+  }
+
+  .mobile-app-content {
+    @apply flex-1 overflow-auto pb-safe;
+  }
+
+  .mobile-app-footer {
+    @apply sticky bottom-0 bg-purple-950/90 backdrop-blur-lg border-t border-purple-500/30 px-3 py-3;
+  }
+}
+
+/* Animations */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes gradient-move {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes text-reveal {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-left {
+  0% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Enhanced mobile optimizations */
+@media (max-width: 640px) {
+  .heading-xl {
+    @apply text-3xl;
+  }
+  
+  .heading-lg {
+    @apply text-2xl;
+  }
+  
+  .heading-md {
+    @apply text-xl;
+  }
+  
+  .heading-sm {
+    @apply text-lg;
+  }
+  
+  .chat-container {
+    min-height: calc(100vh - 120px);
+    height: calc(100dvh - 120px);
+  }
+  
+  /* Better spacing for mobile */
+  .py-4 {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+  
+  .py-6 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  
+  /* Mobile-optimized inputs */
+  textarea, input {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+  
+  /* Smaller button padding on mobile */
+  .btn-mobile {
+    @apply px-2 py-1 text-sm;
+  }
+  
+  /* Improve tap targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Reduce animations on mobile for better performance */
+  .animate-on-desktop {
+    animation: none !important;
+  }
+
+  /* Mobile app-like header */
+  .mobile-app-title {
+    @apply text-lg font-bold text-center;
+  }
+
+  /* Mobile app navigation */
+  .mobile-nav-item {
+    @apply flex items-center justify-center p-2 rounded-full;
+  }
+
+  /* Mobile safe areas */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  /* Mobile bottom sheet */
+  .mobile-bottom-sheet {
+    @apply fixed bottom-0 left-0 right-0 bg-purple-950/95 backdrop-blur-xl rounded-t-xl shadow-lg transform transition-transform duration-300 ease-in-out z-50;
+  }
+
+  .sheet-handle {
+    @apply w-12 h-1 bg-gray-400 rounded-full mx-auto my-2;
+  }
+  
+  /* Improve textarea controls and fix overlapping on mobile */
+  textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    line-height: 1.4 !important;
+    padding-right: 80px !important; /* Make room for controls */
+  }
+  
+  /* Better input padding for mobile */
+  .message-input-container {
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+  }
+  
+  /* Ensure proper spacing for input controls */
+  .input-controls {
+    right: 8px;
+    bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0;
+  }
+  
+  /* Fix scrolling issues on mobile */
+  .chat-content {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scroll-padding-bottom: 20px;
+  }
+  
+  /* Improve tap targets without making them too large */
+  .icon-button {
+    min-height: 36px;
+    min-width: 36px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Reduce animation duration on mobile for better performance */
+  .animate-slide-up, .animate-fade-in {
+    animation-duration: 0.3s;
+  }
+  
+  /* Apply safe area insets for modern iOS devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  
+  /* Optimize dropdown positioning on mobile */
+  .mobile-dropdown {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+}
+
+/* Improve chat message rendering on mobile */
+@media (max-width: 640px) {
+  .message-padding {
+    @apply py-2 px-3;
+  }
+  
+  .message-text {
+    @apply text-sm;
+  }
+  
+  /* Adaptive image sizing */
+  .message-image {
+    max-width: calc(100vw - 60px);
+    max-height: 180px;
+  }
+
+  /* Full height chat on mobile */
+  .chat-container {
+    min-height: 100%;
+    height: 100%;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  /* Ensure proper spacing for mobile chat */
+  .message-container {
+    margin-bottom: 60px; /* Add space for input container */
+  }
+}
+
+/* Add styles for mobile device frame */
+.device-frame {
+  position: relative;
+  width: 320px;
+  height: 650px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 14px solid #1a1a1a;
+  border-radius: 40px;
+  box-shadow: 0 0 0 2px #999, 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.device-frame:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 24px;
+  background: #1a1a1a;
+  border-bottom-left-radius: 20px;
+  border-bottom-right-radius: 20px;
+  z-index: 10;
+}
+
+.device-frame-content {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* Animations for mobile UI interaction */
+.tap-feedback {
+  @apply transition-transform duration-150 active:scale-95;
+}
+
+.swipe-animation {
+  @apply transition-transform duration-300;
+}
+
+@keyframes typing-animation {
+  0%, 100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.typing-dot {
+  @apply inline-block w-2 h-2 rounded-full bg-purple-400/80;
+  animation: typing-animation 1s infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out forwards;
+}
+
+@keyframes slide-up-delayed {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up-delayed {
+  animation: slide-up-delayed 0.5s ease-out;
+  animation-delay: 0.2s;
+  animation-fill-mode: backwards;
+}
+
+/* Add these new styles for chat background */
+.chat-container {
+  position: relative;
+  background: linear-gradient(135deg, 
+    /* Update base theme colors for better purple gradient theme */
+    @layer base {
+      :root {
+        --background: 265 35% 7%;
+        --foreground: 260 20% 98%;
+        --card: 265 35% 10%;
+        --card-foreground: 260 20% 98%;
+        --popover: 265 35% 10%;
+        --popover-foreground: 260 20% 98%;
+        --primary: 265 75% 60%;
+        --primary-foreground: 260 20% 98%;
+        --secondary: 265 35% 15%;
+        --secondary-foreground: 260 20% 98%;
+        --muted: 265 35% 15%;
+        --muted-foreground: 260 30% 70%;
+        --accent: 280 70% 60%;
+        --accent-foreground: 260 30% 12%;
+        --destructive: 0 63% 31%;
+        --destructive-foreground: 260 20% 98%;
+        --border: 265 35% 20%;
+        --input: 265 35% 20%;
+        --ring: 265 75% 60%;
+      }
+    }
+    
+    /* Update body background */
+    body {
+      background: linear-gradient(135deg, 
+        hsl(265 35% 7%),
+        hsl(270 35% 9%),
+        hsl(260 35% 8%)
+      );
+    }
+    
+    /* Add subtle animated background pattern */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: 
+        radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+        repeating-linear-gradient(45deg, rgba(139, 92, 246, 0.03) 0%, rgba(139, 92, 246, 0.03) 1px, transparent 1px, transparent 10px);
+      pointer-events: none;
+      animation: backgroundShift 20s ease-in-out infinite alternate;
+      z-index: -1;
+    }
+    
+    /* Update glass panel effect */
+    .glass-panel {
+      @apply bg-purple-950/20 backdrop-blur-lg border border-purple-500/20 shadow-lg;
+    }
+    
+    .glass-panel-subtle {
+      @apply bg-purple-950/10 backdrop-blur-md border border-purple-500/10;
+    }
+    
+    /* Update gradient text */
+    .text-gradient {
+      @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-violet-400 animate-gradient-move bg-[length:200%_auto];
+    }
+    
+    /* Update card styles */
+    .purple-gradient-card {
+      @apply bg-gradient-to-br from-purple-900/40 to-violet-900/30 backdrop-blur-sm border border-purple-500/20 shadow-lg;
+    }
+    
+    .dark-purple-gradient {
+      @apply bg-gradient-to-br from-purple-950/90 via-purple-900/80 to-violet-950/90 border border-purple-500/20 shadow-lg;
+    }
+    
+    /* Add glow effects */
+    .purple-glow {
+      @apply relative after:absolute after:inset-0 after:-z-10 after:bg-purple-500/10 after:blur-2xl after:opacity-75;
+    }
+    
+    /* Update mobile styling */
+    @media (max-width: 640px) {
+      .mobile-app-header {
+        @apply bg-purple-950/80 backdrop-blur-xl border-b border-purple-500/20;
+      }
+    
+      .mobile-app-footer {
+        @apply bg-purple-950/80 backdrop-blur-xl border-t border-purple-500/20;
+      }
+    
+      .mobile-bottom-sheet {
+        @apply bg-purple-950/90 backdrop-blur-xl border-t border-purple-500/20;
+      }
+    }
+  );
+}
+
+.chat-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(circle at 0% 0%, rgba(147, 51, 234, 0.3) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.3) 0%, transparent 50%),
+    repeating-linear-gradient(45deg, rgba(139, 92, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 1px, transparent 1px, transparent 10px);
+  pointer-events: none;
+  animation: backgroundShift 15s ease-in-out infinite alternate;
+}
+
+/* Message animations and styling */
+.message-container {
+  @apply relative backdrop-blur-sm rounded-xl mb-4 p-4;
+  animation: messageAppear 0.3s ease-out forwards;
+  transform-origin: center;
+}
+
+.message-container.assistant {
+  @apply bg-purple-900/30 border border-purple-500/20;
+  animation: assistantMessageSlide 0.4s ease-out forwards;
+}
+
+.message-container.user {
+  @apply bg-purple-800/20 border border-purple-400/20;
+  animation: userMessageSlide 0.4s ease-out forwards;
+}
+
+/* Input container styling */
+.input-container {
+  @apply fixed bottom-0 left-0 right-0 bg-purple-950/90 backdrop-blur-xl border-t border-purple-500/30;
+  box-shadow: 0 -10px 20px rgba(88, 28, 135, 0.2);
+}
+
+textarea {
+  @apply bg-purple-900/30 backdrop-blur-sm border border-purple-500/20 rounded-lg;
+  @apply focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/30;
+  @apply placeholder:text-purple-300/40;
+  @apply text-purple-50;
+}
+
+/* Input controls styling */
+.input-controls button {
+  @apply text-purple-300 hover:text-purple-100 hover:bg-purple-800/50;
+  @apply disabled:text-purple-400/30 disabled:hover:bg-transparent;
+}
+
+/* Submit button styling */
+.submit-button {
+  @apply bg-purple-700 hover:bg-purple-600 text-white;
+  @apply disabled:bg-purple-800/50 disabled:text-purple-300/50;
+  @apply transition-all duration-300;
+}
+
+/* Mobile-specific input styling */
+@media (max-width: 640px) {
+  .input-container {
+    @apply pb-safe;
+    background: linear-gradient(to bottom,
+      rgba(88, 28, 135, 0.85),
+      rgba(76, 29, 149, 0.95)
+    );
+  }
+
+  textarea {
+    @apply text-base;
+    @apply bg-purple-900/40;
+  }
+}
+
+@keyframes backgroundShift {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes messageAppear {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes assistantMessageSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes userMessageSlide {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideUpInput {
+  0% {
+    transform: translateY(100%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Floating particles effect */
+.chat-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: rgba(147, 51, 234, 0.3);
+  border-radius: 50%;
+  animation: floatParticle 8s infinite linear;
+}
+
+@keyframes floatParticle {
+  0% {
+    transform: translateY(100vh) translateX(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-100px) translateX(100px);
+    opacity: 0;
+  }
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 640px) {
+  .chat-container {
+    background: linear-gradient(135deg, 
+      rgba(76, 29, 149, 0.98),
+      rgba(88, 28, 135, 0.95),
+      rgba(67, 56, 202, 0.9)
+    );
+  }
+
+  .message-container {
+    margin: 8px 12px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .message-container.assistant {
+    border-top-left-radius: 4px;
+  }
+
+  .message-container.user {
+    border-top-right-radius: 4px;
+  }
+
+  /* Typing indicator animation */
+  .typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px;
+    background: rgba(147, 51, 234, 0.2);
+    border-radius: 12px;
+    width: fit-content;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    background: rgba(147, 51, 234, 0.6);
+    border-radius: 50%;
+    animation: typingBounce 1s infinite ease-in-out;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-4px);
+  }
+}
