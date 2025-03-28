@@ -1,214 +1,159 @@
 
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Bot, User, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { User, ExternalLink } from 'lucide-react';
-import { CodeSnippet } from './CodeSnippet';
-
-interface CodeSnippetType {
-  code: string;
-  language: 'html' | 'css' | 'javascript' | 'typescript' | 'jsx' | 'tsx';
-  title?: string;
-}
+import { Button } from '@/components/ui/button';
+import { CodeBlock } from '../code/CodeBlock';
+import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface ChatMessageProps {
   message: {
     id: string;
     content: string;
     role: 'user' | 'assistant';
-    timestamp: Date;
+    timestamp?: Date;
     imageUrl?: string;
-    animate?: boolean;
-    codeSnippets?: CodeSnippetType[];
+    codeSnippets?: Array<{
+      code: string;
+      language: string;
+      title?: string;
+    }>;
   };
-  isLatest?: boolean;
+  compact?: boolean;
 }
 
-export function ChatMessage({ message, isLatest }: ChatMessageProps) {
-  const { role, content, imageUrl, animate, codeSnippets } = message;
-  const isUser = role === 'user';
-  const hasImage = !!imageUrl;
-  
-  const [animationComplete, setAnimationComplete] = useState(!animate);
-  const [typingText, setTypingText] = useState("");
-  
-  useEffect(() => {
-    if (!animate || isUser) {
-      setTypingText(content);
-      setAnimationComplete(true);
-      return;
+export function ChatMessage({ message, compact = false }: ChatMessageProps) {
+  const [copied, setCopied] = useState(false);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    toast.success('Copied to clipboard');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Function to detect and render code blocks
+  const renderContent = () => {
+    if (message.role === 'user') {
+      return <div className="whitespace-pre-wrap">{message.content}</div>;
     }
-    
-    let index = 0;
-    const typingInterval = setInterval(() => {
-      if (index < content.length) {
-        setTypingText(content.substring(0, index + 1));
-        index++;
-      } else {
-        clearInterval(typingInterval);
-        setAnimationComplete(true);
-      }
-    }, 15); // Speed of typing animation
-    
-    return () => clearInterval(typingInterval);
-  }, [content, animate, isUser]);
-  
-  // Function to replace code snippet placeholders with the actual snippets
-  const renderContentWithCodeSnippets = () => {
-    if (!codeSnippets || codeSnippets.length === 0) {
-      return typingText.split('\n').map((line, i) => (
-        <p key={i} className={cn(
-          line.trim() === '' ? 'my-2' : undefined, 
-          "leading-relaxed"
-        )}>
-          {line}
-          {!animationComplete && i === typingText.split('\n').length - 1 && (
-            <span className="ml-1 animate-pulse">▌</span>
-          )}
-        </p>
+
+    if (message.codeSnippets && message.codeSnippets.length > 0) {
+      return message.codeSnippets.map((snippet, index) => (
+        <CodeBlock 
+          key={index}
+          code={snippet.code}
+          language={snippet.language}
+          title={snippet.title}
+          compact={compact}
+        />
       ));
     }
-    
-    // Split content by code snippet placeholders
-    const parts = typingText.split(/\[CODE_SNIPPET_(\d+)\]/);
-    
-    return parts.map((part, index) => {
-      // Even indices are text, odd indices are code snippet references
-      if (index % 2 === 0) {
-        return part.split('\n').map((line, i) => (
-          <p key={`${index}-${i}`} className={cn(
-            line.trim() === '' ? 'my-2' : undefined, 
-            "leading-relaxed"
-          )}>
-            {line}
-            {!animationComplete && index === parts.length - 1 && i === part.split('\n').length - 1 && (
-              <span className="ml-1 animate-pulse">▌</span>
-            )}
-          </p>
-        ));
-      } else {
-        // This is a code snippet reference
-        const snippetIndex = parseInt(part, 10);
-        if (snippetIndex >= 0 && snippetIndex < codeSnippets.length) {
-          const snippet = codeSnippets[snippetIndex];
-          return (
-            <CodeSnippet 
-              key={`snippet-${snippetIndex}`} 
-              code={snippet.code} 
-              language={snippet.language} 
-              title={snippet.title} 
-            />
-          );
-        }
-        return null;
-      }
-    });
+
+    // Use ReactMarkdown for assistant messages to properly format headings and lists
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ node, ...props }) => <h1 className="text-xl md:text-2xl font-bold mt-4 mb-2 text-purple-300" {...props} />,
+          h2: ({ node, ...props }) => <h2 className="text-lg md:text-xl font-bold mt-3 mb-2 text-purple-300" {...props} />,
+          h3: ({ node, ...props }) => <h3 className="text-md md:text-lg font-bold mt-3 mb-1 text-purple-300" {...props} />,
+          h4: ({ node, ...props }) => <h4 className="text-base font-bold mt-2 mb-1 text-purple-300" {...props} />,
+          ul: ({ node, ...props }) => <ul className="list-disc pl-5 my-2 space-y-1" {...props} />,
+          ol: ({ node, ...props }) => <ol className="list-decimal pl-5 my-2 space-y-1" {...props} />,
+          li: ({ node, ...props }) => <li className="my-1" {...props} />,
+          p: ({ node, ...props }) => <p className="my-2" {...props} />,
+          a: ({ node, ...props }) => <a className="text-purple-400 hover:underline" {...props} />,
+          blockquote: ({ node, ...props }) => (
+            <blockquote className="border-l-4 border-purple-500 pl-4 my-2 italic bg-purple-900/20 py-1 rounded-r" {...props} />
+          ),
+          code: ({ node, inline, className, children, ...props }) => {
+            if (inline) {
+              return (
+                <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 font-mono text-sm" {...props}>
+                  {children}
+                </code>
+              );
+            }
+            return null; // CodeBlock component handles non-inline code
+          },
+          pre: ({ node, ...props }) => <pre className="my-2" {...props} />,
+          strong: ({ node, ...props }) => <strong className="font-bold text-purple-200" {...props} />,
+          em: ({ node, ...props }) => <em className="italic text-purple-100" {...props} />,
+          hr: ({ node, ...props }) => <hr className="my-4 border-gray-700" {...props} />,
+          table: ({ node, ...props }) => (
+            <div className="overflow-x-auto my-4">
+              <table className="min-w-full border border-gray-700 rounded" {...props} />
+            </div>
+          ),
+          thead: ({ node, ...props }) => <thead className="bg-gray-800" {...props} />,
+          tbody: ({ node, ...props }) => <tbody className="divide-y divide-gray-700" {...props} />,
+          tr: ({ node, ...props }) => <tr className="border-b border-gray-700" {...props} />,
+          th: ({ node, ...props }) => <th className="px-4 py-2 text-left text-purple-300 font-medium" {...props} />,
+          td: ({ node, ...props }) => <td className="px-4 py-2" {...props} />,
+        }}
+      >
+        {message.content}
+      </ReactMarkdown>
+    );
   };
-  
+
   return (
-    <div
-      className={cn(
-        "transition-all",
-        isLatest && "animate-slide-up",
-        animate && !isUser && "animate-fade-in",
-        isUser ? "bg-purple-800/10" : "bg-transparent",
-        !animationComplete && "opacity-80"
-      )}
-    >
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 flex gap-4">
-        <div className={cn(
-          "w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center mt-1",
-          isUser 
-            ? "bg-purple-700/40 border border-purple-500/30" 
-            : "bg-purple-600/30 border border-purple-500/30"
-        )}>
-          {isUser ? (
-            <User className="h-4 w-4 text-purple-200" />
-          ) : (
-            <Bot className="h-4 w-4 text-purple-200" />
+    <div className={cn(
+      "group flex gap-2 md:gap-4 rounded-xl",
+      compact ? "p-2 md:p-4" : "p-4",
+      message.role === 'assistant' 
+        ? "bg-purple-900/20 border border-purple-500/20"
+        : "bg-gray-800/50 border border-gray-700/50"
+    )}>
+      <div className="shrink-0 mt-1">
+        {message.role === 'assistant' ? (
+          <div className={cn(
+            "rounded-full bg-purple-700/30 flex items-center justify-center",
+            compact ? "h-6 w-6" : "h-8 w-8"
+          )}>
+            <Bot className={cn(compact ? "h-4 w-4" : "h-5 w-5", "text-purple-300")} />
+          </div>
+        ) : (
+          <div className={cn(
+            "rounded-full bg-gray-700/30 flex items-center justify-center",
+            compact ? "h-6 w-6" : "h-8 w-8"
+          )}>
+            <User className={cn(compact ? "h-4 w-4" : "h-5 w-5", "text-gray-300")} />
+          </div>
+        )}
+      </div>
+      
+      <div className="flex-1 overflow-hidden">
+        <div className="flex justify-between items-start mb-1 md:mb-2">
+          <div className={cn("font-medium", compact ? "text-xs" : "text-sm")}>
+            {message.role === 'assistant' ? 'Vyoma AI' : 'You'}
+          </div>
+          
+          {message.role === 'assistant' && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn(
+                "opacity-0 group-hover:opacity-100 transition-opacity",
+                compact ? "h-5 w-5" : "h-6 w-6"
+              )}
+              onClick={copyToClipboard}
+            >
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            </Button>
           )}
         </div>
         
-        <div className="flex-1 space-y-2">
-          <div className="flex items-center">
-            <span className={cn(
-              "font-medium text-sm",
-              isUser ? "text-purple-200" : "text-purple-100"
-            )}>
-              {isUser ? 'You' : 'Vyoma AI'}
-            </span>
-            <span className="text-xs text-purple-400/60 ml-2">
-              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
-          </div>
-          
-          {hasImage && (
-            <div className="mt-2 mb-3 max-w-xs">
-              <div className="relative group">
-                <img 
-                  src={imageUrl} 
-                  alt="User uploaded image" 
-                  className="rounded-md border border-purple-500/30 max-h-48 object-contain hover:opacity-95 transition-opacity cursor-pointer animate-scale-in"
-                  onClick={() => window.open(imageUrl, '_blank')}
-                />
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <a 
-                    href={imageUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center w-7 h-7 bg-purple-950/70 rounded-full hover:bg-purple-900/80 transition-colors"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5 text-purple-200" />
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div className={cn(
-            "prose prose-sm max-w-none",
-            isUser 
-              ? "text-purple-100" 
-              : "text-purple-50"
-          )}>
-            {isUser ? (
-              content.split('\n').map((line, i) => (
-                <p key={i} className={cn(
-                  line.trim() === '' ? 'my-2' : undefined, 
-                  "leading-relaxed"
-                )}>
-                  {line}
-                </p>
-              ))
-            ) : (
-              renderContentWithCodeSnippets()
-            )}
-          </div>
+        <div className={cn(
+          "prose prose-invert max-w-none",
+          compact && "prose-sm md:prose-base"
+        )}>
+          {renderContent()}
         </div>
       </div>
     </div>
-  );
-}
-
-function Bot(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 8V4H8" />
-      <rect width="16" height="12" x="4" y="8" rx="2" />
-      <path d="M2 14h2" />
-      <path d="M20 14h2" />
-      <path d="M15 13v2" />
-      <path d="M9 13v2" />
-    </svg>
   );
 }

@@ -1,339 +1,253 @@
 
-import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, MicOff, ChevronDown, Image, Trash2, Settings } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ChatMessage } from './ChatMessage';
-import { cn } from '@/lib/utils';
+import { useRef, useEffect, useState } from 'react';
 import { useGeminiChat } from '@/hooks/use-gemini-chat';
-import { useIsMobile } from '@/hooks/use-mobile';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from 'sonner';
-import { ImageInput } from './ImageInput';
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-// Remove the scroll-utils import
-import { Paperclip, Smartphone, Monitor } from "lucide-react";
+import { ChatMessage } from './ChatMessage';
+import { MessageInput } from './MessageInput';
+import { Sparkles, ArrowDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function ChatInterface() {
-  const isMobile = useIsMobile();
-  const [showScrollButton, setShowScrollButton] = useState(false);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const documentInputRef = useRef<HTMLInputElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const {
-    messages,
+  const { 
+    messages = [], 
+    sendMessage, 
     isLoading,
-    error,
-    sendMessage,
-    clearMessages,
-    activePersona,
-    changePersona
-  } = useGeminiChat({
-    initialMessages: [
-      {
-        id: '1',
-        content: "Hello! I'm your Vyoma AI assistant. How can I help you today?",
-        role: 'assistant',
-        timestamp: new Date(),
-        animate: true
-      }
-    ]
-  });
+    currentChatId 
+  } = useGeminiChat() || {};
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const [inputValue, setInputValue] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [showImageInput, setShowImageInput] = useState(false);
-  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+  // Improved scroll handling
+  useEffect(() => {
+    if (!messagesEndRef.current) return;
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, currentChatId]); // Add currentChatId dependency
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    setShowScrollButton(distanceFromBottom > 100);
-  };
+  // Add scroll event listener to show/hide scroll button
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollButton(!isNearBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const scrollToBottom = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollHeight,
-        behavior: 'smooth'
-      });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
-    
-    await sendMessage(inputValue);
-    setInputValue('');
-    
-    if (inputRef.current) {
-      inputRef.current.style.height = 'auto';
-    }
-    
-    // Force scroll after sending message
-    setTimeout(() => scrollToBottom(true), 100);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputValue(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
-  };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
-  };
-
-  const toggleRecording = async () => {
-    if (!isRecording) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recognition = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
-        
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        
-        recognition.onresult = (event) => {
-          const transcript = Array.from(event.results)
-            .map(result => result[0])
-            .map(result => result.transcript)
-            .join('');
-          
-          setInputValue(transcript);
-        };
-        
-        recognition.onend = () => {
-          setIsRecording(false);
-          setRecognitionInstance(null);
-        };
-        
-        recognition.start();
-        setIsRecording(true);
-        setRecognitionInstance(recognition);
-      } catch (error) {
-        toast.error('Microphone access denied or not supported');
-        setIsRecording(false);
-      }
-    } else {
-      if (recognitionInstance) {
-        recognitionInstance.stop();
-      }
-      setIsRecording(false);
-      setRecognitionInstance(null);
-    }
-  };
-
-  const handleImageSubmit = async (imageData: string) => {
-    try {
-      if (!imageData) {
-        toast.error('Please select an image');
-        return;
-      }
-
-      await sendMessage('', {
-        imageData: imageData
-      });
+  const handleSendMessage = (text: string, attachments?: Array<{
+    type: 'image' | 'document' | 'audio';
+    file: File;
+    preview?: string;
+  }>) => {
+    // Process attachments if needed
+    if (attachments && attachments.length > 0) {
+      // For now, we'll just add a note about the attachments
+      const attachmentDescriptions = attachments.map(a => `[${a.type}: ${a.file.name}]`).join(' ');
+      const messageWithAttachments = text ? 
+        `${text}\n\n${attachmentDescriptions}` : 
+        attachmentDescriptions;
       
-      setShowImageInput(false);
-      setTimeout(() => scrollToBottom(), 100);
-    } catch (error) {
-      console.error('Error processing image:', error);
-      toast.error('Failed to process image');
+      sendMessage(messageWithAttachments);
+    } else {
+      sendMessage(text);
+    }
+  };
+
+  // Enhanced animation variants
+  const messageVariants = {
+    initial: (i: number) => ({
+      opacity: 0,
+      y: 20,
+      scale: 0.95,
+      rotateX: 10,
+      filter: 'blur(8px)'
+    }),
+    animate: (i: number) => ({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      rotateX: 0,
+      filter: 'blur(0px)',
+      transition: {
+        type: 'spring',
+        damping: 15,
+        stiffness: 100,
+        delay: i * 0.05,
+        duration: 0.4
+      }
+    }),
+    exit: {
+      opacity: 0,
+      transition: { duration: 0.2 }
     }
   };
 
   return (
-    <div className="flex flex-col h-full relative">
-      <div 
-        className={cn(
-          "flex-1 overflow-y-auto scroll-smooth",
-          isMobile && "mt-14 pb-32"
-        )}
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-      >
-        <div className="min-h-full">
-          {messages.map((message, index) => (
-            <ChatMessage 
-              key={message.id} 
-              message={message} 
-              isLatest={index === messages.length - 1}
-            />
-          ))}
-          
-          {/* Loading State */}
-          {isLoading && (
-            <div className="py-4 animate-pulse">
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 flex gap-4">
-                <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center bg-accent/20">
-                  <Bot className="h-4 w-4 text-accent" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center">
-                    <span className="font-medium text-sm">Vyoma AI</span>
-                  </div>
-                  <div className="mt-2 flex space-x-1.5">
-                    <div className="w-2 h-2 rounded-full bg-purple-400/50 animate-pulse"></div>
-                    <div className="w-2 h-2 rounded-full bg-purple-400/50 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 rounded-full bg-purple-400/50 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Image Input Component */}
-          {showImageInput && (
-            <ImageInput 
-              onSubmit={handleImageSubmit} 
-              onCancel={() => setShowImageInput(false)} 
-            />
-          )}
-          
-          {showScrollButton && (
-            <div 
-              onClick={() => scrollToBottom(true)}
-              className="fixed bottom-28 right-4 p-2 rounded-full bg-purple-600/80 hover:bg-purple-500/80 cursor-pointer transition-all duration-200 shadow-lg backdrop-blur-sm z-50"
-            >
-              <ChevronDown className="h-5 w-5 text-white" />
-            </div>
-          )}
-
-          <div ref={messagesEndRef} className="h-20" />
-        </div>
-      </div>
-      
-      {/* Input Container Section */}
-      <div className={cn(
-        "border-t border-purple-700/30 py-1.5 px-2",
-        isMobile && "fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md"
-      )}>
-        <div className="max-w-3xl mx-auto">
-          <form onSubmit={handleSubmit} className="relative flex flex-col gap-1.5">
-            <div className="overflow-hidden rounded-lg shadow-sm border border-purple-600/30 focus-within:ring-1 focus-within:ring-purple-400/50 bg-purple-900/30 backdrop-blur-sm">
-              <textarea
-                ref={inputRef}
-                value={inputValue}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                rows={1}
-                placeholder="Message Vyoma AI..."
-                className="block w-full resize-none border-0 bg-transparent py-2 px-2.5 text-foreground placeholder:text-purple-400/50 focus:ring-0 sm:text-sm sm:leading-6"
-                style={{ 
-                  minHeight: '40px', 
-                  maxHeight: '150px',
-                  overflowY: 'auto'
+    <div className="flex flex-col h-full max-h-[calc(100vh-56px)] overflow-hidden">
+      {messages.length === 0 ? (
+        // Welcome screen with enhanced creative animations
+        <div className="flex-1 flex flex-col items-center justify-center text-center relative overflow-hidden pt-0 mt-0">
+          {/* Animated background elements */}
+          <div className="absolute inset-0 z-0">
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full bg-purple-500/10"
+                initial={{ 
+                  x: Math.random() * 100 - 50 + "%", 
+                  y: Math.random() * 100 - 50 + "%",
+                  scale: Math.random() * 0.5 + 0.5,
+                  opacity: 0
                 }}
-                disabled={isLoading}
+                animate={{ 
+                  x: [
+                    Math.random() * 100 - 50 + "%", 
+                    Math.random() * 100 - 50 + "%"
+                  ],
+                  y: [
+                    Math.random() * 100 - 50 + "%", 
+                    Math.random() * 100 - 50 + "%"
+                  ],
+                  scale: [
+                    Math.random() * 0.5 + 0.5,
+                    Math.random() * 1 + 1
+                  ],
+                  opacity: [0, 0.3, 0]
+                }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: Math.random() * 20 + 10,
+                  ease: "easeInOut"
+                }}
+                style={{
+                  width: Math.random() * 200 + 50,
+                  height: Math.random() * 200 + 50,
+                }}
               />
-            </div>
-    
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-0.5">
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6 text-purple-300 hover:text-purple-100 hover:bg-purple-800/50"
-                  onClick={() => documentInputRef.current?.click()}
-                  disabled={isLoading}
-                >
-                  <input
-                    type="file"
-                    ref={documentInputRef}
-                    className="hidden"
-                    accept=".pdf,.doc,.docx,.txt"
-                    onChange={(e) => handleDocumentUpload(e)}
-                  />
-                  <Paperclip className="h-3.5 w-3.5" />
-                </Button>
-    
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-purple-300 hover:text-purple-100 hover:bg-purple-800/50"
-                  onClick={() => setShowImageInput(!showImageInput)}
-                  disabled={isLoading}
-                >
-                  <Image className="h-4 w-4" />
-                </Button>
-    
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  className={cn(
-                    "h-7 w-7 text-purple-300 hover:text-purple-100 hover:bg-purple-800/50", 
-                    isRecording && "text-red-400 bg-purple-900/50"
-                  )}
-                  onClick={toggleRecording}
-                  disabled={isLoading}
-                >
-                  {isRecording ? (
-                    <MicOff className="h-4 w-4 animate-pulse" />
-                  ) : (
-                    <Mic className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-    
-              <Button
-                type="submit"
-                size="icon"
-                className="h-6 w-6 bg-purple-700 hover:bg-purple-600 transition-all duration-300"
-                disabled={!inputValue.trim() || isLoading}
+            ))}
+          </div>
+          
+          <div className="flex flex-col items-center z-10">
+            {/* Animated logo */}
+            <motion.div
+              initial={{ scale: 0.5, opacity: 0, rotateY: 180 }}
+              animate={{ 
+                scale: 1, 
+                opacity: 1, 
+                rotateY: 0,
+              }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 100, 
+                damping: 10,
+                duration: 1.5
+              }}
+              className="relative mb-1"
+            >
+              <motion.div
+                animate={{ 
+                  rotate: [0, 5, -5, 0],
+                  scale: [1, 1.05, 0.95, 1]
+                }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 5,
+                  ease: "easeInOut"
+                }}
+                className="relative z-10"
               >
-                <Send className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </form>
-    
-          {/* Responsive Device Notice */}
-          <div className="mt-1 flex items-center justify-center space-x-1.5">
-            <Smartphone className="h-3 w-3 text-purple-400/50 hidden sm:block" />
-            <Monitor className="h-3 w-3 text-purple-400/50 hidden sm:block" />
+                <Sparkles className="h-8 w-8 md:h-12 md:w-12 text-purple-400" />
+              </motion.div>
+              <motion.div 
+                className="absolute inset-0 bg-purple-500/20 rounded-full blur-xl"
+                animate={{ 
+                  scale: [0.8, 1.2, 0.8],
+                  opacity: [0.5, 0.8, 0.5]
+                }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 3,
+                  ease: "easeInOut"
+                }}
+              />
+            </motion.div>
+            
+            {/* Animated title */}
+            <motion.h2 
+              className="text-lg md:text-2xl font-bold text-white mb-1 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-300"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              Welcome to Vyoma AI
+            </motion.h2>
+            
+            {/* Animated description */}
+            <motion.p 
+              className="text-gray-400 text-sm md:text-base max-w-md"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+            >
+              Your intelligent assistant for coding, learning, and creative exploration.
+            </motion.p>
           </div>
         </div>
+      ) : (
+        // Messages area - no changes needed here
+        <div 
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto p-1 md:p-4 space-y-2 md:space-y-4 pb-32 scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent"
+        >
+          <AnimatePresence initial={false}>
+            {messages.map((message, index) => (
+              <motion.div
+                key={message.id}
+                custom={index}
+                variants={messageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className={`${message.role === 'user' ? 'origin-right' : 'origin-left'}`}
+              >
+                <ChatMessage message={message} compact={true} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <div ref={messagesEndRef} className="h-4" />
+        </div>
+      )}
+
+      {/* Scroll to bottom button with animation */}
+      <AnimatePresence>
+        {showScrollButton && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={scrollToBottom}
+            className="fixed bottom-24 right-4 bg-purple-600 hover:bg-purple-700 text-white rounded-full p-2 shadow-lg z-30"
+            aria-label="Scroll to bottom"
+          >
+            <ArrowDown className="h-4 w-4" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Input area */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 bg-purple-950/95 border-t border-purple-800/30 shadow-lg">
+        <MessageInput onSend={handleSendMessage} isLoading={isLoading} compact={true} />
       </div>
     </div>
-  );
-}
-
-function Bot(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 8V4H8" />
-      <rect width="16" height="12" x="4" y="8" rx="2" />
-      <path d="M2 14h2" />
-      <path d="M20 14h2" />
-      <path d="M15 13v2" />
-      <path d="M9 13v2" />
-    </svg>
   );
 }
 
