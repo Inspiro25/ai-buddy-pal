@@ -181,7 +181,9 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         }
 
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        const audioFile = new File([audioBlob], `recording-${Date.now()}.wav`, { type: 'audio/wav' });
+        // Fix the File constructor issue by explicitly creating a Blob first, then converting to File
+        const fileName = `recording-${Date.now()}.wav`;
+        const audioFile = new File([audioBlob], fileName, { type: 'audio/wav' }) as File;
         
         // Create audio element for preview
         const audioURL = URL.createObjectURL(audioBlob);
