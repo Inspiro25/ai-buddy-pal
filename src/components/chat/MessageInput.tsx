@@ -185,7 +185,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         
         // Create audio element for preview
         const audioURL = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioURL);
+        const audio = new window.Audio(audioURL);
         
         setAttachments(prev => [...prev, { 
           type: 'audio', 
