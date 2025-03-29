@@ -139,7 +139,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             className="text-xl md:text-2xl font-bold relative"
           >
             {/* Animated colorful letters without bouncing */}
-            {"GEMINI AI".split('').map((letter, i) => (
+            {"VYOMA AI".split('').map((letter, i) => (
               <motion.span
                 key={i}
                 className="inline-block"

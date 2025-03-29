@@ -51,7 +51,7 @@
   }
 
   .input-container {
-    @apply fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-teal-500/30;
+    @apply fixed bottom-0 left-0 right-0 bg-gemini-teal-dark/80 backdrop-blur-xl border-t border-gemini-teal/30;
     box-shadow: 0 -10px 30px -5px rgba(19, 78, 74, 0.2);
   }
 
@@ -97,7 +97,7 @@
   }
 }
 
-/* Gemini theme smooth scrolling */
+/* Vyoma AI theme smooth scrolling */
 html {
   scroll-behavior: smooth;
 }
