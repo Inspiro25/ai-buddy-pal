@@ -1,11 +1,9 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Send, File, Image, Mic, X, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
-// Add the missing SpeechRecognition interface to fix TypeScript errors
 interface SpeechRecognition extends EventTarget {
   start(): void;
   stop(): void;
@@ -41,7 +39,6 @@ interface SpeechRecognitionErrorEvent extends Event {
   error: string;
 }
 
-// Add this to the global namespace
 declare global {
   var SpeechRecognition: {
     prototype: SpeechRecognition;
@@ -80,23 +77,19 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isRecordingSupported, setIsRecordingSupported] = useState(true);
   
-  // Add speech recognition state and refs
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  // Check for recording support on component mount
   useEffect(() => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setIsRecordingSupported(false);
     }
     
-    // Check if the browser supports speech recognition
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       console.warn('Speech recognition is not supported in this browser');
     }
   }, []);
 
-  // Clean up recording resources when component unmounts
   useEffect(() => {
     return () => {
       if (mediaRecorderRef.current) {
@@ -110,7 +103,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         clearInterval(timerRef.current);
       }
       
-      // Stop speech recognition if active
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
@@ -133,7 +125,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
     const file = files[0];
     const newAttachment = { type, file } as any;
 
-    // Create preview for images
     if (type === 'image') {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -146,7 +137,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
     }
 
     setAttachments(prev => [...prev, newAttachment]);
-    e.target.value = ''; // Reset input
+    e.target.value = '';
     toast.success(`${type} added`);
   };
 
@@ -155,7 +146,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
   };
 
   const startRecording = async () => {
-    // Check if browser supports audio recording
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       toast.error('Audio recording is not supported in this browser');
       return;
@@ -184,7 +174,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         const fileName = `recording-${Date.now()}.wav`;
         const audioFile = new File([audioBlob], fileName, { type: 'audio/wav' });
         
-        // Create audio URL for preview without creating an Audio instance
         const audioURL = URL.createObjectURL(audioBlob);
         
         setAttachments(prev => [...prev, { 
@@ -201,7 +190,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         }
       };
 
-      // Start recording and timer
       mediaRecorder.start();
       setIsRecording(true);
       
@@ -209,7 +197,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         setRecordingTime(prev => prev + 1);
       }, 1000);
       
-      // Auto-stop after 60 seconds
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === 'recording') {
           stopRecording();
@@ -226,7 +213,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       try {
         mediaRecorderRef.current.stop();
-        // Stop all audio tracks
         mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       } catch (error) {
         console.error('Error stopping recording:', error);
@@ -241,10 +227,8 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Add speech recognition functions
   const startSpeechRecognition = () => {
     try {
-      // Initialize speech recognition
       const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognitionAPI) {
         toast.error('Speech recognition is not supported in this browser');
@@ -254,12 +238,10 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
       const recognition = new SpeechRecognitionAPI();
       recognitionRef.current = recognition;
       
-      // Configure recognition
       recognition.continuous = true;
       recognition.interimResults = true;
       recognition.lang = 'en-US';
       
-      // Handle results
       recognition.onresult = (event) => {
         const transcript = Array.from(event.results)
           .map(result => result[0].transcript)
@@ -268,19 +250,16 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         setMessage(transcript);
       };
       
-      // Handle errors
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
         toast.error(`Speech recognition error: ${event.error}`);
         stopSpeechRecognition();
       };
       
-      // Handle end of recognition
       recognition.onend = () => {
         setIsListening(false);
       };
       
-      // Start listening
       recognition.start();
       setIsListening(true);
       toast.success('Listening...');
@@ -299,7 +278,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
 
   return (
     <div className="flex flex-col w-full">
-      {/* Attachments preview */}
       {attachments.length > 0 && (
         <div className="flex flex-wrap gap-2 p-2 border-t border-gray-800">
           {attachments.map((attachment, index) => (
@@ -330,7 +308,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         </div>
       )}
 
-      {/* Message input and controls */}
       <form 
         onSubmit={handleSubmit}
         className={cn(
@@ -383,7 +360,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         )}
       </form>
 
-      {/* Attachment buttons */}
       <div className="flex justify-center gap-4 pb-2">
         <input 
           type="file" 
