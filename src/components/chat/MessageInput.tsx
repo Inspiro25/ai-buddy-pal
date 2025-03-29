@@ -1,8 +1,55 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Send, File, Image, Mic, X, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+
+// Add the missing SpeechRecognition interface to fix TypeScript errors
+interface SpeechRecognition extends EventTarget {
+  start(): void;
+  stop(): void;
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: SpeechRecognitionErrorEvent) => void;
+  onend: () => void;
+}
+
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+  length: number;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+
+// Add this to the global namespace
+declare global {
+  var SpeechRecognition: {
+    new(): SpeechRecognition;
+  };
+  var webkitSpeechRecognition: {
+    new(): SpeechRecognition;
+  };
+}
 
 interface MessageInputProps {
   onSend: (message: string, attachments?: Array<{
@@ -30,11 +77,20 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
   const audioChunksRef = useRef<BlobPart[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [isRecordingSupported, setIsRecordingSupported] = useState(true);
+  
+  // Add speech recognition state and refs
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // Check for recording support on component mount
   useEffect(() => {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setIsRecordingSupported(false);
+    }
+    
+    // Check if the browser supports speech recognition
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      console.warn('Speech recognition is not supported in this browser');
     }
   }, []);
 
@@ -50,6 +106,11 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      
+      // Stop speech recognition if active
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
       }
     };
   }, []);
@@ -178,6 +239,62 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Add speech recognition functions
+  const startSpeechRecognition = () => {
+    try {
+      // Initialize speech recognition
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognitionAPI) {
+        toast.error('Speech recognition is not supported in this browser');
+        return;
+      }
+
+      const recognition = new SpeechRecognitionAPI();
+      recognitionRef.current = recognition;
+      
+      // Configure recognition
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+      
+      // Handle results
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        
+        setMessage(transcript);
+      };
+      
+      // Handle errors
+      recognition.onerror = (event) => {
+        console.error('Speech recognition error', event.error);
+        toast.error(`Speech recognition error: ${event.error}`);
+        stopSpeechRecognition();
+      };
+      
+      // Handle end of recognition
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+      
+      // Start listening
+      recognition.start();
+      setIsListening(true);
+      toast.success('Listening...');
+    } catch (error) {
+      console.error('Error starting speech recognition:', error);
+      toast.error('Failed to start speech recognition');
+    }
+  };
+  
+  const stopSpeechRecognition = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
   return (
     <div className="flex flex-col w-full">
       {/* Attachments preview */}
@@ -226,8 +343,8 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
             "flex-1 bg-gray-800/50 border border-gray-700 rounded-lg px-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white",
             compact ? "py-1.5 text-sm" : "py-2 h-10"
           )}
-          placeholder={isRecording ? `Recording... ${formatTime(recordingTime)}` : "Type your message..."}
-          disabled={isLoading || isRecording}
+          placeholder={isRecording ? `Recording... ${formatTime(recordingTime)}` : isListening ? "Listening..." : "Type your message..."}
+          disabled={isLoading || isRecording || isListening}
           autoComplete="off"
         />
         
@@ -236,6 +353,15 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
             type="button" 
             size="icon" 
             onClick={stopRecording}
+            className="bg-red-600 hover:bg-red-700 h-10 w-10 flex items-center justify-center animate-pulse"
+          >
+            <StopCircle className="h-5 w-5" />
+          </Button>
+        ) : isListening ? (
+          <Button 
+            type="button" 
+            size="icon" 
+            onClick={stopSpeechRecognition}
             className="bg-red-600 hover:bg-red-700 h-10 w-10 flex items-center justify-center animate-pulse"
           >
             <StopCircle className="h-5 w-5" />
@@ -285,7 +411,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
           size="sm" 
           onClick={() => fileInputRef.current?.click()}
           className="rounded-full p-2 bg-gray-800/50"
-          disabled={isRecording}
+          disabled={isRecording || isListening}
         >
           <File className="h-4 w-4" />
         </Button>
@@ -296,7 +422,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
           size="sm" 
           onClick={() => imageInputRef.current?.click()}
           className="rounded-full p-2 bg-gray-800/50"
-          disabled={isRecording}
+          disabled={isRecording || isListening}
         >
           <Image className="h-4 w-4" />
         </Button>
@@ -311,6 +437,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
               "rounded-full p-2",
               isRecording ? "bg-red-500/50 animate-pulse" : "bg-gray-800/50"
             )}
+            disabled={isListening}
           >
             <Mic className="h-4 w-4" />
           </Button>
@@ -326,109 +453,22 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
             <Mic className="h-4 w-4" />
           </Button>
         )}
-      </div>
-    </div>
-  );
-
-  // Add speech recognition state and refs
-  const [isListening, setIsListening] = useState(false);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  
-  // Check for speech recognition support on component mount
-  useEffect(() => {
-    // Check if the browser supports speech recognition
-    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      console.warn('Speech recognition is not supported in this browser');
-    }
-  }, []);
-
-  // Add speech recognition functions
-  const startSpeechRecognition = () => {
-    try {
-      // Initialize speech recognition
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        toast.error('Speech recognition is not supported in this browser');
-        return;
-      }
-
-      const recognition = new SpeechRecognition();
-      recognitionRef.current = recognition;
-      
-      // Configure recognition
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-      
-      // Handle results
-      recognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-          .map(result => result[0].transcript)
-          .join('');
         
-        setMessage(transcript);
-      };
-      
-      // Handle errors
-      recognition.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        toast.error(`Speech recognition error: ${event.error}`);
-        stopSpeechRecognition();
-      };
-      
-      // Handle end of recognition
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-      
-      // Start listening
-      recognition.start();
-      setIsListening(true);
-      toast.success('Listening...');
-    } catch (error) {
-      console.error('Error starting speech recognition:', error);
-      toast.error('Failed to start speech recognition');
-    }
-  };
-  
-  const stopSpeechRecognition = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
-
-  // Modify your UI to include speech recognition button
-  return (
-    <div className={cn("relative", compact ? "px-2 py-2" : "px-4 py-4")}>
-      {/* ... existing attachment display code ... */}
-      
-      <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        {/* ... existing attachment buttons ... */}
-        
-        {/* Add speech recognition button */}
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
+        <Button 
+          type="button" 
+          variant="ghost" 
+          size="sm" 
           onClick={isListening ? stopSpeechRecognition : startSpeechRecognition}
           className={cn(
-            "text-muted-foreground hover:text-primary transition-colors",
-            isListening && "text-red-500 hover:text-red-600"
+            "rounded-full p-2",
+            isListening ? "bg-red-500/50 animate-pulse" : "bg-gray-800/50"
           )}
-          disabled={isLoading}
+          disabled={isRecording}
         >
-          {isListening ? (
-            <StopCircle className="h-5 w-5" />
-          ) : (
-            <Mic className="h-5 w-5" />
-          )}
+          <Mic className="h-4 w-4" />
+          {isListening && <span className="ml-1 text-xs">Stop</span>}
         </Button>
-        
-        {/* ... existing input field and send button ... */}
-      </form>
-      
-      {/* ... existing file input refs ... */}
+      </div>
     </div>
   );
 }

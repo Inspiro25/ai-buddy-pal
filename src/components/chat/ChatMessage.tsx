@@ -69,8 +69,9 @@ export function ChatMessage({ message, compact = false }: ChatMessageProps) {
           blockquote: ({ node, ...props }) => (
             <blockquote className="border-l-4 border-purple-500 pl-4 my-2 italic bg-purple-900/20 py-1 rounded-r" {...props} />
           ),
-          code: ({ node, inline, className, children, ...props }) => {
-            if (inline) {
+          code: ({ className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || '');
+            if (!props.className) {
               return (
                 <code className="bg-gray-800 px-1 py-0.5 rounded text-purple-300 font-mono text-sm" {...props}>
                   {children}
