@@ -44,9 +44,11 @@ interface SpeechRecognitionErrorEvent extends Event {
 // Add this to the global namespace
 declare global {
   var SpeechRecognition: {
+    prototype: SpeechRecognition;
     new(): SpeechRecognition;
   };
   var webkitSpeechRecognition: {
+    prototype: SpeechRecognition;
     new(): SpeechRecognition;
   };
 }
@@ -293,6 +295,43 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
       recognitionRef.current.stop();
       setIsListening(false);
     }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (message.trim() || attachments.length > 0) {
+      onSend(message, attachments);
+      setMessage('');
+      setAttachments([]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'document' | 'audio') => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const newAttachment = { type, file } as any;
+
+    // Create preview for images
+    if (type === 'image') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAttachments(prev => prev.map(att => 
+          att.file === file ? { ...att, preview: e.target?.result as string } : att
+        ));
+      };
+      reader.readAsDataURL(file);
+      newAttachment.preview = 'loading';
+    }
+
+    setAttachments(prev => [...prev, newAttachment]);
+    e.target.value = ''; // Reset input
+    toast.success(`${type} added`);
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
