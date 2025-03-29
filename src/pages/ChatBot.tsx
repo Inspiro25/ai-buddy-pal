@@ -106,7 +106,7 @@ const ChatBot = () => {
             className="mt-4"
           >
             <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-300 to-cyan-300 text-transparent bg-clip-text">
-              GEMINI AI
+              VYOMA AI
             </h1>
             <motion.div
               initial={{ opacity: 0 }}
