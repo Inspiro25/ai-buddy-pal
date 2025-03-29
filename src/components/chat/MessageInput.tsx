@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from 'react';
 import { Send, File as FileIcon, Image, Mic, X, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -174,7 +173,6 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
         const fileName = `recording-${Date.now()}.wav`;
         
-        // Fixed: Create File object correctly with an array of parts as first arg
         const audioFile = new File([audioBlob], fileName, { type: 'audio/wav' });
         
         const audioURL = URL.createObjectURL(audioBlob);
@@ -296,7 +294,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
                 </div>
               ) : (
                 <div className="w-16 h-16 bg-gray-800 rounded flex items-center justify-center">
-                  {attachment.type === 'document' && <File className="h-6 w-6 text-gray-400" />}
+                  {attachment.type === 'document' && <FileIcon className="h-6 w-6 text-gray-400" />}
                   {attachment.type === 'audio' && <Mic className="h-6 w-6 text-gray-400" />}
                 </div>
               )}
@@ -394,7 +392,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
           className="rounded-full p-2 bg-gray-800/50"
           disabled={isRecording || isListening}
         >
-          <File className="h-4 w-4" />
+          <FileIcon className="h-4 w-4" />
         </Button>
         
         <Button 
