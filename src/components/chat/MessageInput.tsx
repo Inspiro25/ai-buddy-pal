@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { Send, File, Image, Mic, X, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -172,6 +173,7 @@ export function MessageInput({ onSend, isLoading = false, compact = false }: Mes
 
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
         const fileName = `recording-${Date.now()}.wav`;
+        // Fix the File constructor call - File takes a BlobPart[], name, and options
         const audioFile = new File([audioBlob], fileName, { type: 'audio/wav' });
         
         const audioURL = URL.createObjectURL(audioBlob);
