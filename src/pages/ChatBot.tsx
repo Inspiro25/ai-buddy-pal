@@ -81,7 +81,7 @@ const ChatBot = () => {
               ease: "easeInOut"
             }}
           >
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-teal-600 to-cyan-600 blur-xl" />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 blur-xl" />
           </motion.div>
 
           <motion.div
@@ -96,7 +96,7 @@ const ChatBot = () => {
             }}
             className="relative"
           >
-            <Sparkles className="h-16 w-16 text-teal-300" />
+            <Sparkles className="h-16 w-16 text-purple-300" />
           </motion.div>
 
           <motion.div
@@ -105,14 +105,14 @@ const ChatBot = () => {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="mt-4"
           >
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-300 to-cyan-300 text-transparent bg-clip-text">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-300 to-indigo-300 text-transparent bg-clip-text">
               VYOMA AI
             </h1>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="mt-2 text-teal-300/70 text-sm"
+              className="mt-2 text-purple-300/70 text-sm"
             >
               Initializing AI Assistant...
             </motion.div>
@@ -131,17 +131,17 @@ const ChatBot = () => {
     >
       <FloatingParticles />
       
-      <div className="fixed inset-0 bg-gradient-to-br from-gemini-teal-dark/95 via-[#042f2c]/90 to-[#052e34]/95">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(20,184,166,0.1),transparent_70%)]" />
+      <div className="fixed inset-0 bg-gradient-to-br from-purple-950/95 via-violet-950/90 to-indigo-950/95">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(147,51,234,0.1),transparent_70%)]" />
       </div>
       
       <div className="flex-1 flex relative pt-16">
         <aside 
           className={cn(
             "fixed top-0 left-0 h-full w-[85vw] md:w-80 shrink-0",
-            "z-40 bg-[#042f2c]/90 backdrop-blur-xl",
+            "z-40 bg-purple-950/90 backdrop-blur-xl",
             "transition-transform duration-300 ease-out",
-            "border-r border-teal-500/20",
+            "border-r border-purple-500/20",
             !sidebarOpen && "-translate-x-full md:translate-x-0"
           )}
           style={{ 
@@ -151,10 +151,10 @@ const ChatBot = () => {
         >
           <div className="h-full flex flex-col">
             <div className="px-4 py-3 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-teal-500/10">
-                <Bot className="h-5 w-5 text-teal-300" />
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <Bot className="h-5 w-5 text-purple-300" />
               </div>
-              <h2 className="text-lg font-semibold text-teal-50">Chat History</h2>
+              <h2 className="text-lg font-semibold text-purple-50">Chat History</h2>
             </div>
             <div className="flex-1 overflow-y-auto">
               <ChatHistory />

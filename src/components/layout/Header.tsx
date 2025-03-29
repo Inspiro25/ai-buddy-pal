@@ -31,16 +31,16 @@ export function Header({ onMenuClick }: HeaderProps) {
   }, [controls]);
 
   const colors = [
-    'from-teal-600 via-cyan-500 to-blue-500',
-    'from-cyan-500 via-teal-600 to-emerald-500',
-    'from-emerald-500 via-teal-500 to-cyan-600',
-    'from-blue-500 via-cyan-500 to-teal-500',
-    'from-teal-500 via-emerald-600 to-cyan-500',
+    'from-purple-600 via-pink-500 to-blue-500',
+    'from-blue-500 via-purple-600 to-pink-500',
+    'from-pink-500 via-blue-500 to-purple-600',
+    'from-violet-600 via-indigo-500 to-purple-500',
+    'from-fuchsia-500 via-purple-600 to-indigo-500',
   ];
   
   return (
-    <header className="sticky top-0 z-50 overflow-hidden border-b border-teal-500/20 h-16 flex items-center px-4">
-      {/* Modern background with stars */}
+    <header className="sticky top-0 z-50 overflow-hidden border-b border-purple-500/20 h-16 flex items-center px-4">
+      {/* Cosmic background with stars */}
       <div className="absolute inset-0 -z-10 overflow-hidden">
         <motion.div 
           className={`absolute inset-0 bg-gradient-to-r ${colors[randomColor]} opacity-20`}
@@ -94,7 +94,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           </div>
         )}
         
-        <div className="absolute inset-0 backdrop-blur-md bg-[#052e2b]/70" />
+        <div className="absolute inset-0 backdrop-blur-md bg-purple-950/70" />
       </div>
       
       {isMobile && (
@@ -110,7 +110,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             className="relative overflow-hidden group"
           >
             <motion.div
-              className="absolute inset-0 bg-teal-500/30 rounded-full"
+              className="absolute inset-0 bg-purple-500/30 rounded-full"
               initial={{ scale: 0, opacity: 0 }}
               whileHover={{ scale: 2, opacity: 0.5 }}
               transition={{ duration: 0.4 }}
@@ -119,7 +119,7 @@ export function Header({ onMenuClick }: HeaderProps) {
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <PanelLeft className="h-5 w-5 relative z-10 text-teal-200" />
+              <PanelLeft className="h-5 w-5 relative z-10 text-purple-200" />
             </motion.div>
           </Button>
         </motion.div>
@@ -183,6 +183,9 @@ export function Header({ onMenuClick }: HeaderProps) {
               ✨
             </motion.span>
           </motion.h1>
+          
+          
+
         </motion.div>
       </motion.div>
       

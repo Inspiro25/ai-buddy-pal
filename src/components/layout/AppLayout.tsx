@@ -1,4 +1,3 @@
-
 import { Outlet } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Header } from "./Header";
@@ -17,7 +16,7 @@ export function AppLayout() {
   }, [isMobile]);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-[#052e2b]/90 to-[#052e34] overflow-hidden">
+    <div className="flex h-screen bg-gradient-to-br from-cyan-950/90 to-slate-900 overflow-hidden">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
