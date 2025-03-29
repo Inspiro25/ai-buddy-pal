@@ -31,7 +31,28 @@ const config: Config = {
       },
       padding: {
         'safe': 'env(safe-area-inset-bottom)',
-      }
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
+      screens: {
+        'xs': '390px',
+      },
+      animation: {
+        'gradient-x': 'gradient-x 10s ease infinite',
+      },
+      keyframes: {
+        'gradient-x': {
+          '0%, 100%': {
+            'background-size': '200% 200%',
+            'background-position': 'left center',
+          },
+          '50%': {
+            'background-size': '200% 200%',
+            'background-position': 'right center',
+          },
+        },
+      },
     }
   },
   plugins: [

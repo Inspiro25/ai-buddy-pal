@@ -183,9 +183,6 @@ export function Header({ onMenuClick }: HeaderProps) {
               ✨
             </motion.span>
           </motion.h1>
-          
-          
-
         </motion.div>
       </motion.div>
       
